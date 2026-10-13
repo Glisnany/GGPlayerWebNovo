@@ -1,0 +1,44 @@
+
+:root { --gold: #e5a900; --bg: #0f1015; --card-bg: #1a1c23; }
+* { box-sizing: border-box; }
+body { margin: 0; background-color: var(--bg); color: #fff; font-family: Arial, sans-serif; overflow: hidden; }
+.screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; background: var(--bg); }
+.screen.active { display: flex; flex-direction: column; }
+#login-screen { justify-content: center; align-items: center; }
+.login-container { background: var(--card-bg); padding: 40px; border-radius: 8px; width: 350px; text-align: center; }
+.login-container input { width: 100%; padding: 12px; margin: 10px 0; background: #2a2d38; border: 1px solid #444; color: #fff; border-radius: 4px; }
+.login-container button { width: 100%; padding: 12px; background: var(--gold); border: none; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
+.error-msg { color: #ff5555; margin-top: 15px; font-size: 14px; }
+.main-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: #14161d; border-bottom: 1px solid #222; }
+.nav-tabs button { background: none; border: none; color: #aaa; font-size: 16px; margin: 0 15px; cursor: pointer; padding-bottom: 5px; }
+.nav-tabs button.active { color: var(--gold); border-bottom: 2px solid var(--gold); }
+.header-right { display: flex; align-items: center; gap: 15px; }
+.header-right input { padding: 8px 12px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; }
+.main-content { display: flex; flex: 1; height: calc(100vh - 70px); overflow: hidden; }
+.categories-panel { width: 280px; background: #12141a; border-right: 1px solid #222; overflow-y: auto; }
+.categories-list { list-style: none; padding: 0; margin: 0; }
+.category-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid #1a1c23; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.category-item:hover, .category-item.active { background: #1f222d; color: var(--gold); }
+.content-body { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+.live-hero { display: flex; gap: 20px; height: 100%; }
+.hero-player-container { flex: 1; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.hero-player-container video { width: 100%; height: 100%; object-fit: contain; }
+.hero-info { width: 300px; display: flex; flex-direction: column; justify-content: center; gap: 15px; }
+.content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+.stream-item { background: var(--card-bg); border-radius: 6px; overflow: hidden; cursor: pointer; transition: transform 0.2s; display: flex; flex-direction: column; }
+.stream-item:hover { transform: scale(1.03); }
+.stream-item-inner { position: relative; width: 100%; aspect-ratio: 2/3; background: #000; }
+.stream-item-inner img { width: 100%; height: 100%; object-fit: cover; }
+.stream-title { padding: 10px; font-size: 14px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag-overlay { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #fff; padding: 4px 8px; font-size: 12px; border-radius: 4px; }
+.btn-primary { background: var(--gold); border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; color: #000; }
+.btn-secondary { background: #333; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; color: #fff; }
+.btn-back { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.6); border: 1px solid #444; color: #fff; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+#details-screen .details-container { display: flex; gap: 40px; padding: 80px 40px 40px 40px; height: 100%; overflow-y: auto; }
+#details-poster { width: 300px; height: 450px; object-fit: cover; border-radius: 8px; }
+.details-info { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+.meta-info { display: flex; gap: 15px; color: var(--gold); font-weight: bold; }
+.actions { display: flex; gap: 15px; margin-top: 10px; }
+.episode-item { display: flex; justify-content: space-between; padding: 10px 15px; background: #1a1c23; margin-bottom: 8px; border-radius: 4px; cursor: pointer; }
+.episode-item:hover { background: #262a36; }
+#player-screen video { width: 100%; height: 100%; object-fit: contain; }

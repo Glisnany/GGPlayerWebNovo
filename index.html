@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GG Player - Web</title>
+    <!-- HLS.js for Live TV on non-Safari browsers -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- HTTPS WARNING BANNER -->
+    <div id="https-warning" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;">
+        <h1 style="color: #FFD700; margin-bottom: 15px; font-size: 50px;">⚠ Atenção: Conexão HTTPS</h1>
+        <p style="font-size: 18px; line-height: 1.6; max-width: 600px;">
+            Para que os vídeos e canais funcionem perfeitamente, este aplicativo precisa rodar em modo <b>HTTP</b>.<br><br>
+            Por favor, vá até a barra de endereços do seu navegador, remova o "<b>s</b>" do "http<b>s</b>://" e acesse novamente.
+        </p>
+    </div>
+
+    <div id="app-container">
+        <!-- LOGIN SCREEN -->
+        <div id="login-screen" class="screen active">
+            <div class="login-box">
+                <img src="assets/logo_gg.png" alt="Logo" class="logo-large">
+                <h2 class="login-title">Acesso ao Sistema</h2>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label>Usuário</label>
+                        <input type="text" id="user-input" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Senha</label>
+                        <input type="password" id="pass-input" required>
+                    </div>
+                    
+                    <div id="login-error" class="error-msg"></div>
+                    
+                    <button type="submit" class="btn-primary" id="btn-login">
+                        <span id="login-text">Entrar</span>
+                        <span id="login-spinner" style="display: none;">Carregando...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD -->
+        <div id="main-screen" class="screen main-layout">
+            <!-- Top Navigation Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <img src="assets/logo_gg.png" alt="Logo" class="topbar-logo">
+                    <button class="tab-btn active" data-target="live">Canais</button>
+                    <button class="tab-btn" data-target="movies">Filmes</button>
+                    <button class="tab-btn" data-target="series">Séries</button>
+                    <button class="tab-btn" data-target="favorites">Favoritos</button>
+                    <button class="tab-btn" data-target="history">Histórico</button>
+                </div>
+                <div class="topbar-right">
+                    <div class="status-indicator"></div>
+                    <span id="expire-date">Vencimento: --/--</span>
+                    <button id="btn-logout" class="tab-btn" style="margin-left: 20px;">Sair</button>
+                </div>
+            </header>
+
+            <div class="content-split">
+                <!-- Left Panel: Categories -->
+                <aside class="left-panel" id="categories-panel">
+                    <div class="left-panel-header">
+                        <h3 id="category-title">Categorias</h3>
+                        <button id="btn-clear-history" style="display: none;">Limpar Histórico</button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </div>
+                    <ul id="categories-list" class="custom-scrollbar"></ul>
+                </aside>
+
+                <!-- Right Panel: Hero & Grid -->
+                <main class="right-panel" id="items-panel">
+                    <!-- Live TV Hero -->
+                    <div id="live-hero" class="hero-panel">
+                        <div class="hero-player-wrapper">
+                            <video id="mini-player" playsinline autoplay></video>
+                        </div>
+                        <div class="hero-bar">
+                            <h2 id="hero-title">Selecione um canal</h2>
+                            <button id="btn-fullscreen" class="btn-primary" style="display: none;">Assistir em Tela Cheia</button>
+                        </div>
+                    </div>
+
+                    <!-- VOD Grid / Live List -->
+                    <div id="content-grid" class="content-grid custom-scrollbar"></div>
+                </main>
+            </div>
+        </div>
+
+        <!-- DETAILS SCREEN -->
+        <div id="details-screen" class="screen overlay-screen">
+            <div class="details-container">
+                <button class="btn-close-overlay" id="btn-close-details">X</button>
+                <div class="details-content">
+                    <img id="details-poster" src="" alt="Poster">
+                    <div class="details-info">
+                        <h2 id="details-title">Título</h2>
+                        <div class="details-meta">
+                            <span id="details-year"></span> <span id="details-rating"></span>
+                        </div>
+                        <p id="details-plot" class="custom-scrollbar"></p>
+                        
+                        <div class="action-buttons">
+                            <button id="btn-play-vod" class="btn-primary">Assistir</button>
+                            <button id="btn-fav-vod" class="btn-secondary">Favoritar</button>
+                        </div>
+                        
+                        <div id="series-episodes-container" style="display: none;">
+                            <select id="season-select" class="glass-select"></select>
+                            <div id="episodes-list" class="episodes-list custom-scrollbar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FULLSCREEN PLAYER -->
+        <div id="player-screen" class="screen overlay-screen bg-black">
+            <button class="btn-close-overlay player-back" id="btn-close-player">Voltar</button>
+            <video id="main-player" playsinline controls class="full-video"></video>
+        </div>
+
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
+

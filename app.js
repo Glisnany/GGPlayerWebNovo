@@ -2016,10 +2016,54 @@
     };
   }
 
+  function wrapWithProxy(url) {
+    if (typeof window !== "undefined" && typeof window.wrapWithProxy === "function") {
+      return window.wrapWithProxy(url);
+    }
+    if (!url || typeof url !== "string") {
+      return url;
+    }
+    var clean = trim(url);
+    if (!clean) {
+      return url;
+    }
+    var isHttps =
+      typeof window !== "undefined" &&
+      window.location &&
+      window.location.protocol === "https:";
+    if (!isHttps) {
+      return clean;
+    }
+    if (clean.indexOf("/api/proxy") === 0 || clean.indexOf("api/proxy") === 0) {
+      return clean;
+    }
+    if (clean.charAt(0) === "/" && clean.indexOf("//") === -1) {
+      return clean;
+    }
+    if (
+      clean.indexOf("firestore.googleapis.com") !== -1 ||
+      clean.indexOf("googleapis.com") !== -1 ||
+      clean.indexOf("omdbapi.com") !== -1 ||
+      clean.indexOf("themoviedb.org") !== -1
+    ) {
+      return clean;
+    }
+    if (
+      /^http:\/\//i.test(clean) ||
+      clean.indexOf("player_api.php") !== -1 ||
+      /\.(m3u|m3u8|ts|mp4)(\?|$)/i.test(clean) ||
+      /\/(live|movie|series)\//i.test(clean)
+    ) {
+      return "/api/proxy?url=" + encodeURIComponent(clean);
+    }
+    return clean;
+  }
+
   function fetchText(url, userAgent) {
     return new Promise(function (resolve, reject) {
+      var reqUrl = wrapWithProxy(url);
       var xhr = new XMLHttpRequest();
-      xhr.open("GET", url, true);
+      xhr.open("GET", reqUrl, true);
       xhr.timeout = 30000;
       var src = activeSource();
       var ua = userAgent || (src && src.userAgent) || DEFAULT_USER_AGENT;
@@ -2078,8 +2122,9 @@
   // XHR with arbitrary method, headers, and optional JSON body.
   function xhrJSON(method, url, headers, body) {
     return new Promise(function (resolve, reject) {
+      var reqUrl = wrapWithProxy(url);
       var xhr = new XMLHttpRequest();
-      xhr.open(method, url, true);
+      xhr.open(method, reqUrl, true);
       xhr.timeout = 15000;
       try {
         xhr.setRequestHeader("Accept", "*/*");
@@ -2642,6 +2687,9 @@
       CdnHttpLoader.prototype.load = function (context, config, callbacks) {
         if (typeof window !== "undefined" && window.location && window.location.protocol !== "https:" && context && context.url && /^https:\/\//i.test(context.url)) {
           context.url = context.url.replace(/^https:\/\//i, "http://");
+        }
+        if (context && context.url) {
+          context.url = wrapWithProxy(context.url);
         }
         Base.prototype.load.call(this, context, config, callbacks);
       };
@@ -4997,6 +5045,7 @@
         video.style.opacity = "1";
       } catch (e0) {}
       video.volume = state.settings.volume;
+      url = wrapWithProxy(url);
 
       if (isHlsUrl(url) && canUseNativeHls(video)) {
         video.src = url;
@@ -7767,7 +7816,8 @@
     }
     video.muted = false;
     video.volume = state.settings.volume;
-    if (isHlsUrl(trailer.url) && !canUseNativeHls(video) && window.Hls && Hls.isSupported()) {
+    var trailerUrl = wrapWithProxy(trailer.url);
+    if (isHlsUrl(trailerUrl) && !canUseNativeHls(video) && window.Hls && Hls.isSupported()) {
       trailerState.hls = new Hls({
         enableWorker: false,
         xhrSetup: function (xhr) {
@@ -7786,14 +7836,14 @@
           }
         }
       });
-      trailerState.hls.loadSource(trailer.url);
+      trailerState.hls.loadSource(trailerUrl);
       trailerState.hls.attachMedia(video);
       trailerState.hls.on(Hls.Events.MANIFEST_PARSED, function () {
         playTrailerVideo(video);
       });
       return;
     }
-    video.src = trailer.url;
+    video.src = trailerUrl;
     video.oncanplay = function () {
       playTrailerVideo(video);
     };
@@ -8935,6 +8985,8 @@
         console.warn("[overlay] Stream request failed; advancing playback fallback.", candidateIndex + 1);
         scheduleOverlayReconnect("error");
       };
+
+      currentUrl = wrapWithProxy(currentUrl);
 
       if (isHlsUrl(currentUrl) && canUseNativeHls(video)) {
         video.src = currentUrl;

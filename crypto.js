@@ -100,6 +100,46 @@ var CryptoHelper = (function() {
 var DnsResolver = (function () {
   var DEFAULT_FALLBACK_DNS = "https://dnsgood.site";
 
+  function wrapWithProxy(url) {
+    if (!url || typeof url !== "string") {
+      return url;
+    }
+    var clean = url.trim();
+    if (!clean) {
+      return url;
+    }
+    var isHttps =
+      typeof window !== "undefined" &&
+      window.location &&
+      window.location.protocol === "https:";
+    if (!isHttps) {
+      return clean;
+    }
+    if (clean.indexOf("/api/proxy") === 0 || clean.indexOf("api/proxy") === 0) {
+      return clean;
+    }
+    if (clean.charAt(0) === "/" && clean.indexOf("//") === -1) {
+      return clean;
+    }
+    if (
+      clean.indexOf("firestore.googleapis.com") !== -1 ||
+      clean.indexOf("googleapis.com") !== -1 ||
+      clean.indexOf("omdbapi.com") !== -1 ||
+      clean.indexOf("themoviedb.org") !== -1
+    ) {
+      return clean;
+    }
+    if (
+      /^http:\/\//i.test(clean) ||
+      clean.indexOf("player_api.php") !== -1 ||
+      /\.(m3u|m3u8|ts|mp4)(\?|$)/i.test(clean) ||
+      /\/(live|movie|series)\//i.test(clean)
+    ) {
+      return "/api/proxy?url=" + encodeURIComponent(clean);
+    }
+    return clean;
+  }
+
   function sanitizeUrl(url) {
     if (!url) return "";
     var clean = String(url).trim();
@@ -202,8 +242,9 @@ var DnsResolver = (function () {
         "&password=" +
         encodeURIComponent(password || "");
 
+      var reqUrl = wrapWithProxy(testUrl);
       var xhr = new XMLHttpRequest();
-      xhr.open("GET", testUrl, true);
+      xhr.open("GET", reqUrl, true);
       xhr.timeout = timeoutMs || 3500;
       try {
         xhr.setRequestHeader("Accept", "*/*");
@@ -282,6 +323,7 @@ var DnsResolver = (function () {
   }
 
   return {
+    wrapWithProxy: wrapWithProxy,
     sanitizeUrl: sanitizeUrl,
     getCandidates: getCandidates,
     probeServer: probeServer,
@@ -293,4 +335,5 @@ var DnsResolver = (function () {
 if (typeof window !== "undefined") {
   window.CryptoHelper = CryptoHelper;
   window.DnsResolver = DnsResolver;
+  window.wrapWithProxy = DnsResolver.wrapWithProxy;
 }

@@ -4010,7 +4010,11 @@
           state.homeSummary.recentSourceId = source.id;
           state.homeSummary.recentSessionLoaded = true;
           state.homeSummary.recentLoading = false;
-          var isFatal = tasks.length > 0 && failed >= tasks.length;
+          var isFatal = tasks.length > 0 && failed >= Math.max(1, tasks.length);
+          // Se ao menos algumas categorias carregaram com sucesso ou se foram erros pontuais de categoria, não marca falha fatal da seção
+          if (done > 0 && failed < tasks.length) {
+            isFatal = false;
+          }
           return { failed: isFatal ? failed : 0, error: firstFailure, partial: failed > 0 };
         });
       })

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="referrer" content="no-referrer" />
+    <title>GG Player vLG – Ativação</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="style.css" />
+    
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script src="polyfills.js"></script>
+    <script src="crypto.js"></script>
+    
+    <style>
+      /* Layout de Ativação */
+      html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        background: #080b10; overflow: hidden;
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: #f9fbff;
+      }
+      body {
+        background-color: #10151d;
+        background-image: url("background.png");
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+      #activation-page {
+        display: flex; align-items: center; justify-content: center;
+        width: 100%; height: 100%;
+      }
+      #activation-card {
+        width: 900px; max-width: 90vw;
+        background: rgba(20, 30, 63, 0.96);
+        border: 1px solid rgba(158, 228, 255, 0.38);
+        border-radius: 24px; padding: 50px;
+        box-shadow: 0 20px 60px rgba(3, 7, 20, 0.6);
+        text-align: center;
+      }
+      .brand-mark {
+        width: 120px; height: 120px; margin: 0 auto 20px;
+        cursor: pointer;
+      }
+      .brand-logo { width: 100%; height: auto; }
+      h1 { font-size: 46px; margin: 0 0 10px; color: #f9fbff; }
+      p.instructions {
+        font-size: 26px; color: #a4afbc; line-height: 1.5;
+        margin: 0 0 40px;
+      }
+      .device-id-box {
+        background: rgba(12, 19, 42, 0.72);
+        border: 2px dashed rgba(158, 228, 255, 0.5);
+        border-radius: 16px; padding: 30px;
+        margin-bottom: 40px;
+      }
+      .device-id-label { font-size: 22px; color: #b9c8de; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;}
+      .device-id-value { font-size: 64px; font-weight: bold; color: #63e1d2; letter-spacing: 4px; font-family: monospace;}
+      
+      .status-box {
+        font-size: 24px; margin-bottom: 30px; padding: 15px; border-radius: 12px;
+        display: none;
+      }
+      .status-box.show { display: inline-block; }
+      .status-box.error { background: rgba(166, 44, 56, 0.2); color: #ffd0d5; border: 1px solid rgba(255, 146, 158, 0.42); }
+      .status-box.waiting { background: rgba(255, 193, 7, 0.15); color: #ffe082; border: 1px solid rgba(255, 193, 7, 0.3); }
+      .status-box.success { background: rgba(76, 175, 80, 0.15); color: #a5d6a7; border: 1px solid rgba(76, 175, 80, 0.3); }
+
+      .actions { display: flex; justify-content: center; }
+      .btn {
+        min-width: 240px; min-height: 70px; border-radius: 12px;
+        font-size: 28px; font-weight: 700; border: 1px solid transparent;
+        background: rgba(27, 37, 76, 0.84); color: #b9c8de;
+      }
+      .btn.primary { background: #63e1d2; color: #06241f; }
+      
+      /* Focus States for TV Navigation */
+      .focusable { outline: none; }
+      .lp-focus {
+        outline: 4px solid #4a7afc !important; outline-offset: 3px !important;
+        box-shadow: 0 0 0 6px rgba(74, 122, 252, 0.28) !important;
+      }
+      button.lp-focus { background: #4a7afc !important; color: #ffffff !important; border-color: #4a7afc !important; }
+      
+      /* Modal Store Backdoor */
+      #store-modal {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 1000;
+        align-items: center; justify-content: center;
+      }
+      #store-modal.show { display: flex; }
+      .modal-content {
+        background: #1c245a; padding: 40px; border-radius: 16px; width: 500px;
+        border: 1px solid #4a7afc; text-align: center;
+      }
+      .modal-content h2 { margin-top: 0; color: #fff; }
+      .modal-content input {
+        width: 100%; height: 60px; font-size: 28px; padding: 10px; box-sizing: border-box;
+        margin-bottom: 20px; border-radius: 8px; background: #0c132a; color: #fff; border: 1px solid #4a7afc;
+      }
+      .modal-content input.lp-focus { border-color: #63e1d2 !important; background: rgba(40, 52, 78, 0.98) !important; }
+      .modal-actions { display: flex; justify-content: space-around; }
+      .modal-btn { min-width: 180px; min-height: 50px; font-size: 24px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="activation-page">
+      <div id="activation-card">
+        <div class="brand-mark" id="logo-trigger">
+          <img class="brand-logo" src="new-logo.png" alt="Logo" />
+        </div>
+        <h1>Bem-vindo</h1>
+        <p class="instructions">
+          Para acessar o conteúdo, envie o código abaixo para o seu administrador e solicite a liberação do seu aparelho.
+        </p>
+        
+        <div class="device-id-box">
+          <div class="device-id-label">Código do Dispositivo</div>
+          <div class="device-id-value" id="device-id-display">GERANDO...</div>
+        </div>
+
+        <div id="status-message" class="status-box"></div>
+
+        <div class="actions">
+          <button id="btn-verify" class="btn primary focusable" tabindex="0">
+            Verificar Liberação
+          </button>
+        </div>
+
+        <div style="margin-top: 24px;">
+          <button id="btn-test-mode" class="focusable" tabindex="0" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.55); padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; letter-spacing: 0.5px;">
+            MODO TESTE
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Backdoor para Revisores da Loja -->
+    <div id="store-modal">
+      <div class="modal-content">
+        <h2>Acesso Loja</h2>
+        <input type="text" id="store-code" class="focusable" tabindex="-1" placeholder="Código" />
+        <div class="modal-actions">
+          <button id="btn-store-cancel" class="btn modal-btn focusable" tabindex="-1">Cancelar</button>
+          <button id="btn-store-ok" class="btn primary modal-btn focusable" tabindex="-1">Entrar</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="login.js"></script>
+  </body>
+</html>

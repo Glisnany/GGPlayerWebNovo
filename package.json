@@ -1,0 +1,29 @@
+{
+  "name": "gg-player-vlg-titan-os",
+  "version": "1.0.73",
+  "private": true,
+  "description": "GG Player vLG web application adapted for Titan OS browser runtimes.",
+  "main": "index.html",
+  "files": [
+    "index.html",
+    "login.html",
+    "app.js",
+    "login.js",
+    "style.css",
+    "polyfills.js",
+    "crypto.js",
+    "hls.min.js",
+    "mpegts.min.js",
+    "manifest.webmanifest",
+    "icons/",
+    "splash/",
+    "*.png"
+  ],
+  "titanOs": {
+    "entrypoint": "index.html",
+    "manifest": "manifest.webmanifest",
+    "icon": "icons/icon-512.png",
+    "splashScreen": "splash/splash-1920x1080.png",
+    "resolution": "1920x1080"
+  }
+}

@@ -2108,10 +2108,10 @@
         throw new Error("JSON parse error");
       }
     }).catch(function (error) {
-      var isAuthErr = error && (error.message === "HTTP 403" || error.message === "HTTP 401");
-      if (isAuthErr && src && src.type === "xtream" && window.DnsResolver && !src._recoveringDns) {
+      var isRecoverable = error && /HTTP\s*(502|504|500|403|401|404)|network|timeout/i.test(error.message || "");
+      if (isRecoverable && src && src.type === "xtream" && window.DnsResolver && !src._recoveringDns) {
         src._recoveringDns = true;
-        console.warn("Xtream returned " + error.message + " on " + src.server + ". Auto-recovering DNS...");
+        console.warn("Xtream returned " + (error.message || error) + " on " + src.server + ". Auto-recovering DNS...");
         try { localStorage.removeItem("GG_ACTIVE_DNS"); } catch (e) {}
         return window.DnsResolver.resolveActiveDns({
           username: src.user,

@@ -14,31 +14,38 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // Extrai rawUrl de req.query ou de req.url diretamente para não truncar parâmetros com &
-  let rawUrl = req.query.url;
-  if (!rawUrl && req.url) {
-    const m = req.url.match(/[?&]url=([^&]+.*)/);
-    if (m) rawUrl = m[1];
+  // Vercel decodes req.query once. Decode the raw request URL once as well.
+  let rawUrl = req.query && req.query.url;
+  if (rawUrl === undefined && req.url) {
+    try {
+      rawUrl = new URL(req.url, "http://localhost").searchParams.get("url");
+    } catch (err) {
+      return res.status(400).json({ error: "Invalid request URL" });
+    }
   }
 
-  if (!rawUrl) {
+  if (typeof rawUrl !== "string" || !rawUrl) {
     return res.status(400).json({ error: "Missing 'url' query parameter" });
   }
 
   let targetUrl;
   try {
-    targetUrl = decodeURIComponent(rawUrl);
-    if (/^https?%3A/i.test(targetUrl)) {
-      targetUrl = decodeURIComponent(targetUrl);
-    }
+    targetUrl = rawUrl;
     // Corrige typos de protocolo como http:/exemplo.com
     targetUrl = targetUrl.replace(/^http:\/([^\/])/i, "http://$1");
     targetUrl = targetUrl.replace(/^https:\/([^\/])/i, "https://$1");
     if (!/^https?:\/\//i.test(targetUrl)) {
-      return res.status(400).json({ error: "Invalid protocol in target URL: " + targetUrl });
+      return res.status(400).json({ error: "Invalid protocol in target URL" });
     }
   } catch (err) {
-    return res.status(400).json({ error: "Invalid URL parameter: " + err.message });
+    return res.status(400).json({ error: "Invalid URL parameter" });
+  }
+
+  let targetHost;
+  try {
+    targetHost = new URL(targetUrl).host;
+  } catch (err) {
+    return res.status(400).json({ error: "Invalid target URL" });
   }
 
   try {
@@ -55,7 +62,7 @@ module.exports = async function handler(req, res) {
       method: req.method || "GET",
       headers: upstreamHeaders,
       redirect: "follow",
-      signal: AbortSignal.timeout(9000)
+      signal: AbortSignal.timeout(20000)
     };
 
     if (req.method === "POST" && req.body) {
@@ -92,7 +99,6 @@ module.exports = async function handler(req, res) {
       return res.end();
     }
 
-    const clientAcceptsGzip = (req.headers["accept-encoding"] || "").includes("gzip");
     const upstreamEncoding = upstreamRes.headers.get("content-encoding");
 
     // Se o upstream já mandou compactado, repassa direto
@@ -102,10 +108,20 @@ module.exports = async function handler(req, res) {
       return await pipeline(readable, res);
     }
 
-    // Se o cliente aceita gzip e é JSON ou texto, compacta em tempo real para nunca exceder o limite de 4.5MB da Vercel
-    const isTextOrJson = !contentType || contentType.includes("json") || contentType.includes("text") || contentType.includes("javascript");
-    if (clientAcceptsGzip && isTextOrJson) {
+    // Para qualquer resposta de texto ou JSON, compacta SEMPRE com gzip (nível 6).
+    // Isso reduz listas massivas de filmes/canais (até 16MB) para centenas de KB,
+    // eliminando o erro FUNCTION_PAYLOAD_TOO_LARGE / HTTP 502 da Vercel (limite de 4.5MB).
+    // Browsers e clients HTTP descompactam gzip de forma nativa e transparente.
+    const isTextOrJson =
+      !contentType ||
+      contentType.includes("json") ||
+      contentType.includes("text") ||
+      contentType.includes("javascript");
+    if (isTextOrJson) {
       res.setHeader("Content-Encoding", "gzip");
+      if (typeof res.removeHeader === "function") {
+        res.removeHeader("Content-Length");
+      }
       const gzip = zlib.createGzip({ level: 6 });
       const readable = Readable.fromWeb(upstreamRes.body);
       return await pipeline(readable, gzip, res);
@@ -123,13 +139,15 @@ module.exports = async function handler(req, res) {
     if (err.code === "ERR_STREAM_PREMATURE_CLOSE" || err.message === "Premature close") {
       return;
     }
-    console.error("[Proxy Error] target:", targetUrl, err.name, err.message);
+    const errorType = err.name || "Error";
+    const errorCode = err.code ? String(err.code) : "";
+    console.error("[Proxy Error] host:", targetHost, errorType, errorCode);
     if (!res.headersSent) {
       res.status(502).json({
         error: "Proxy upstream request failed",
-        type: err.name || "Error",
-        message: err.message || String(err),
-        url: targetUrl
+        type: errorType,
+        message: "Upstream request failed",
+        host: targetHost
       });
     }
   }

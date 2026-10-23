@@ -32,9 +32,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    var clientUa = req.headers["user-agent"] || "";
+    var finalUa = clientUa.indexOf("IPTVSmartersPro") !== -1 ? clientUa : "IPTVSmartersPro";
+
     const upstreamHeaders = {
-      "User-Agent": req.headers["user-agent"] || "IPTVSmartersPro",
-      "Accept": req.headers["accept"] || "*/*",
+      "User-Agent": finalUa,
+      "Accept": "*/*",
       "X-Requested-With": "IPTVSmartersPro"
     };
 

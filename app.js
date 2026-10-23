@@ -2108,6 +2108,31 @@
         throw new Error("JSON parse error");
       }
     }).catch(function (error) {
+      var isAuthErr = error && (error.message === "HTTP 403" || error.message === "HTTP 401");
+      if (isAuthErr && src && src.type === "xtream" && window.DnsResolver && !src._recoveringDns) {
+        src._recoveringDns = true;
+        console.warn("Xtream returned " + error.message + " on " + src.server + ". Auto-recovering DNS...");
+        try { localStorage.removeItem("GG_ACTIVE_DNS"); } catch (e) {}
+        return window.DnsResolver.resolveActiveDns({
+          username: src.user,
+          password: src.pass,
+          ignoreStored: true
+        }).then(function (newServer) {
+          src._recoveringDns = false;
+          if (newServer && newServer !== src.server) {
+            console.log("DNS successfully recovered: " + src.server + " -> " + newServer);
+            src.server = newServer;
+            src.url = newServer;
+            try { localStorage.setItem("GG_ACTIVE_DNS", newServer); } catch (e) {}
+            var newUrl = url.replace(/https?:\/\/[^\/]+/i, newServer);
+            return fetchJSON(newUrl, userAgent);
+          }
+          throw error;
+        }).catch(function () {
+          src._recoveringDns = false;
+          throw error;
+        });
+      }
       var actionMatch = String(url).match(/[?&]action=([^&]*)/i);
       var action = actionMatch ? actionMatch[1] : "unknown";
       console.error(

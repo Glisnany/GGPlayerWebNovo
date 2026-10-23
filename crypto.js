@@ -98,7 +98,19 @@ var CryptoHelper = (function() {
 })();
 
 var DnsResolver = (function () {
-  var DEFAULT_FALLBACK_DNS = "https://dnsgood.site";
+  var DEFAULT_FALLBACK_DNS = "http://livebr.top";
+  var FALLBACK_DNS_LIST = [
+    "http://playprime.top",
+    "http://livebr.top",
+    "http://lulu.dns2.site",
+    "http://dnscloud.shop:80",
+    "https://dnsgood.site",
+    "http://akdemia.click",
+    "http://crcns.com:80",
+    "http://skylinetop.top",
+    "http://gbox.click"
+  ];
+  var cachedDnsList = [];
 
   function wrapWithProxy(url) {
     if (!url || typeof url !== "string") {
@@ -155,7 +167,7 @@ var DnsResolver = (function () {
     return clean;
   }
 
-  function getCandidates(device, config, activeDns) {
+  function getCandidates(device, config, activeDns, ignoreStored) {
     var list = [];
     var seen = {};
 
@@ -169,11 +181,13 @@ var DnsResolver = (function () {
       }
     }
 
-    if (activeDns) add(activeDns);
-    try {
-      var storedActive = localStorage.getItem("GG_ACTIVE_DNS");
-      if (storedActive) add(storedActive);
-    } catch (e) {}
+    if (!ignoreStored) {
+      if (activeDns) add(activeDns);
+      try {
+        var storedActive = localStorage.getItem("GG_ACTIVE_DNS");
+        if (storedActive) add(storedActive);
+      } catch (e) {}
+    }
 
     if (device) {
       if (device.xtream_url) add(device.xtream_url);
@@ -192,6 +206,13 @@ var DnsResolver = (function () {
       for (var i = 0; i < vals.length; i++) {
         if (vals[i] && vals[i].stringValue) dnsList.push(vals[i].stringValue);
       }
+    }
+    if (dnsList.length) {
+      cachedDnsList = dnsList.slice();
+    } else if (cachedDnsList.length) {
+      dnsList = cachedDnsList.slice();
+    } else {
+      dnsList = FALLBACK_DNS_LIST.slice();
     }
 
     var assignedIndex = -1;
@@ -214,17 +235,6 @@ var DnsResolver = (function () {
     }
 
     add(DEFAULT_FALLBACK_DNS);
-
-    var isHttpsPage = typeof window !== "undefined" && window.location && window.location.protocol === "https:";
-    list.sort(function (a, b) {
-      var aHttps = a.toLowerCase().indexOf("https://") === 0 ? 1 : 0;
-      var bHttps = b.toLowerCase().indexOf("https://") === 0 ? 1 : 0;
-      if (isHttpsPage) {
-        return bHttps - aHttps;
-      }
-      return 0;
-    });
-
     return list;
   }
 
@@ -260,8 +270,12 @@ var DnsResolver = (function () {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               var json = JSON.parse(xhr.responseText);
-              if (json && (json.user_info || json.server_info)) {
-                return resolve({ server: norm, ok: true, json: json });
+              if (json && json.user_info) {
+                var auth = json.user_info.auth;
+                var isAuthed = auth === 1 || auth === "1" || auth === true || auth === "true";
+                if (isAuthed) {
+                  return resolve({ server: norm, ok: true, json: json });
+                }
               }
             } catch (e) {}
           }
@@ -286,7 +300,7 @@ var DnsResolver = (function () {
     var password = options.password || device.password || device.xtream_password || "";
     var activeDns = options.activeDns || "";
 
-    var candidates = getCandidates(device, config, activeDns);
+    var candidates = getCandidates(device, config, activeDns, options.ignoreStored);
     if (!candidates.length) {
       return Promise.resolve(DEFAULT_FALLBACK_DNS);
     }

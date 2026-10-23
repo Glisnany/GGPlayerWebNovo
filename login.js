@@ -139,13 +139,13 @@
               password: pass
             });
           } else {
-            resolvePromise = Promise.resolve(data.xtream_url || fixedUrl || "https://dnsgood.site");
+            resolvePromise = Promise.resolve(data.xtream_url || fixedUrl || "http://livebr.top");
           }
 
           resolvePromise.then(function(workingDns) {
             workingDns = (workingDns || "").trim();
             if (!isM3u && !workingDns) {
-              workingDns = "https://dnsgood.site";
+              workingDns = (window.DnsResolver && window.DnsResolver.DEFAULT_FALLBACK_DNS) || "http://livebr.top";
             }
             var payload = {
               username: user,

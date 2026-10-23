@@ -103,6 +103,9 @@ var DnsResolver = (function () {
   function sanitizeUrl(url) {
     if (!url) return "";
     var clean = String(url).trim();
+    if (clean.indexOf("/api/xtream") === 0) {
+      return clean.replace(/\/+$/, "");
+    }
     clean = clean.replace(/^http:\/([^\/])/i, "http://$1");
     clean = clean.replace(/^https:\/([^\/])/i, "https://$1");
     clean = clean.replace(/\/+$/, "");

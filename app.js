@@ -2132,6 +2132,9 @@
     if (!base) {
       base = "https://dnsgood.site";
     }
+    if (base.indexOf("/api/xtream") === 0) {
+      return base.replace(/\/+$/, "");
+    }
     base = base.replace(/^http:\/([^\/])/i, "http://$1");
     base = base.replace(/^https:\/([^\/])/i, "https://$1");
     if (!/^https?:\/\//i.test(base)) {
